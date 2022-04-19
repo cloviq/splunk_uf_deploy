@@ -1,4 +1,4 @@
-splunk-uf
+splunk_uf_deploy
 =========
 
 This role is intended to install the Splunk Universal Forwarder on Windows and Redhat hosts. It also enables boot start and points to the deployment server. The control server copies the installer files to the Splunk Forwarders. There is a download handler for Windows, but it is not used in current state. This can also remove the forwarder by setting a variable.
@@ -54,7 +54,7 @@ Example Playbook
 ----------------
 
 Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
-    
+
     - name: Install Splunk UF
       hosts: all
       vars:
@@ -77,4 +77,3 @@ Author Information
 ------------------
 
 Written by Carlo Viqueira from Splunk Professional Services
-
