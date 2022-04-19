@@ -1,0 +1,11 @@
+---
+# tasks file for /etc/ansible/roles/splunk-uf
+
+- name: Import Redhat based tasks
+  import_tasks: redhat.yml
+  when: ansible_os_family|lower == 'redhat'
+
+- name: Import Windows based tasks
+  import_tasks: windows.yml
+  when: ansible_os_family|lower == 'windows'
+

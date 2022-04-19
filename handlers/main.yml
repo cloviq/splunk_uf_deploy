@@ -1,0 +1,108 @@
+---
+# handlers file for /etc/ansible/roles/splunk-uf
+
+## Redhat Handlers
+
+- name: Set package value
+  set_fact:
+    rpm_package: "{{ splunk_rpm.rstrip('-linux-2.6-.x86_64.rpm') }}"
+
+- name: Install user-seed
+  become: yes
+  become_user: "{{ splunk_user }}"
+  template:
+    src: user-seed.conf.j2
+    dest: "{{ splunk_home_path }}/etc/system/local/user-seed.conf"
+    owner: "{{ splunk_user }}"
+    group: "{{ splunk_group }}"
+  notify: Initial start splunkd
+
+- name: Initial start splunkd
+  become: yes
+  become_user: "{{ splunk_user }}"
+  command:
+    cmd: "{{ splunk_bin_path }}/splunk start --accept-license --no-prompt"    
+  notify: Install deployment client app
+
+- name: Install deployment client app
+  become: yes
+  become_user: "{{ splunk_user }}"
+  copy: 
+    src: "{{ splunk_org }}_all_deploymentclient"
+    dest: "{{ splunk_apps_path }}"
+    owner: "{{ splunk_user }}"
+    group: "{{ splunk_group }}"
+  listen: Install deployment client app
+
+- name: Place deploymentclient.conf template
+  become: yes
+  become_user: "{{ splunk_user }}"
+  template:
+    src: deploymentclient.conf.j2
+    dest: "{{ splunk_apps_path }}/{{ splunk_org }}_all_deploymentclient/local/deploymentclient.conf"
+    owner: "{{ splunk_user }}"
+    group: "{{ splunk_group }}"
+  listen: Install deployment client app
+
+- name: Restart splunkd
+  become: yes
+  become_user: "{{ splunk_user }}"
+  command:
+    cmd: "{{ splunk_bin_path }}/splunk restart"
+  listen: Install deployment client app
+  notify: Enable boot start
+
+- name: Enable boot start
+  become: yes
+  command:
+    cmd: "{{ splunk_bin_path }}/splunk enable boot-start -user splunk"
+  when: splunk_enable_boot_start == true
+
+- name: Stop splunkd
+  become: yes
+  become_user: "{{ splunk_user }}"
+  command:
+    cmd: "{{ splunk_bin_path }}/splunk stop"
+
+# yum remove/absent was not working for the rpm uninstall so implemented manual
+- name: Uninstall Splunk UF rpm
+  become: yes
+  command:
+    cmd: 'rpm -e {{ rpm_package }}'
+    warn: no
+  when: nix_uf_state == "absent" or nix_uf_state == "removed"
+
+- name: RM splunk dir
+  become: yes
+  command:
+    cmd: "rm -rf {{ splunk_home_path }}"
+  when: nix_uf_state == "absent" or nix_uf_state == "removed"
+
+## Windows Handlers
+- name: Win Get Windows installer
+  win_get_url:
+    url: "{{ win_wget }}"
+    dest: '{{ ansible_env.USERPROFILE }}\Downloads\{{ splunk_msi }}'
+  when:
+    - win_uf_state == "present"
+    - splunkmsi.stat.exists == False
+
+- name: Install deployment client app
+  win_copy:
+    src: "{{ splunk_org }}_all_deploymentclient"
+    dest: "{{ win_splunk_apps_path }}"
+  listen: Win connect deployment
+  notify: Win place deploymentclient.conf
+
+- name: Win place deploymentclient.conf
+  win_template:
+    src: deploymentclient.conf.j2
+    dest: '{{ win_splunk_apps_path }}\{{ splunk_org }}_all_deploymentclient\local\deploymentclient.conf'
+  notify: Win restart
+
+- name: Win restart
+  win_service:
+    name: SplunkForwarder
+    state: restarted
+
+

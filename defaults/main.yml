@@ -1,0 +1,29 @@
+---
+# defaults file for /etc/ansible/roles/splunk-uf
+## Redhat defaults
+splunk_user: splunk
+splunk_group: splunk
+splunk_admin_user: admin
+splunk_admin_password: UnsecureDefault1!
+splunk_org: org
+splunk_ds: deployment_server
+splunk_ds_port: deployment_server_port
+splunk_home_path: /opt/splunkforwarder
+splunk_apps_path: "{{ splunk_home_path }}/etc/apps"
+splunk_bin_path: "{{ splunk_home_path }}/bin"
+splunk_enable_boot_start: yes
+splunk_rpm: 'splunkforwarder-8.2.4-87e2dda940d1-linux-2.6-x86_64.rpm'
+splunk_rpm_wget: 'https://download.splunk.com/products/universalforwarder/releases/8.2.4/linux/splunkforwarder-8.2.4-87e2dda940d1-linux-2.6-x86_64.rpm'
+nix_uf_state: present
+push_file: false
+
+## Windows defaults
+win_splunk_user: domain\splunk
+win_splunk_password: UnsecureDefault1!
+win_wget: 'https://www.splunk.com/bin/splunk/DownloadActivityServlet?architecture=x86_64&platform=windows&version=8.0.1&product=universalforwarder&filename=splunkforwarder-8.0.1-6db836e2fb9e-x64-release.msi&wget=true'
+splunk_msi: 'splunkforwarder-8.0.1-6db836e2fb9e-x64-release.msi'
+win_uf_state: present
+win_splunk_home: C:\Program Files\SplunkUniversalForwarder
+win_splunk_apps_path: "{{ win_splunk_home }}\\etc\\apps"
+win_splunk_bin_path: "{{ win_splunk_home}}\\bin"
+win_uf_install_args: 'AGREETOLICENSE=Yes INSTALLDIR="{{ win_splunk_home }}" LOGON_USERNAME="{{ win_splunk_user }}" LOGON_PASSWORD="{{ win_splunk_password }}" /quiet'

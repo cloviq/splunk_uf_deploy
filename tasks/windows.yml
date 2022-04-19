@@ -1,0 +1,31 @@
+---
+- name: Win check whether installer is copied/downloaded
+  win_stat:
+    path: '{{ ansible_env.USERPROFILE }}\Downloads\{{ splunk_msi }}'
+  register: splunkmsi
+
+- name: Win copy msi to host
+  win_copy:
+    src: "{{ splunk_msi }}"
+    dest: '{{ ansible_env.USERPROFILE }}\Downloads\{{ splunk_msi }}'
+  when: 
+    - win_uf_state == "present" 
+    - splunkmsi.stat.exists == False
+
+- name: Install Windows Splunk UF
+  win_package:
+    path: '{{ ansible_env.USERPROFILE }}\Downloads\{{ splunk_msi }}'
+    state: "{{ win_uf_state }}"
+    arguments: "{{ win_uf_install_args }}"
+    log_path: '{{ ansible_env.TMP }}\splunk-install.log'
+  when: win_uf_state == "present"
+  notify: Win connect deployment
+
+- name: Uninstall Windows Splunk UF
+  win_package:
+    path: '{{ ansible_env.USERPROFILE }}\Downloads\{{ splunk_msi }}'
+    state: "{{ win_uf_state }}"
+    arguments: "{{ win_uf_install_args }}"
+    log_path: '{{ ansible_env.TMP }}\splunk-install.log'
+  when: win_uf_state == "absent" or win_uf_state == "removed"
+

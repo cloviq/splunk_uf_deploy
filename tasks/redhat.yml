@@ -1,0 +1,55 @@
+---
+
+- name: Configure Redhat UF
+  stat:
+    path: "{{ splunk_bin_path }}"
+  register: splunk_installed
+
+- name: Check whether installer is downloaded
+  stat:
+    path: '/tmp/{{ splunk_rpm }}'
+  register: splunkrpm
+  when:
+    - nix_uf_state == "present"
+
+- name: Download uf rpm
+  get_url:
+    url: '{{ splunk_rpm_wget }}'
+    dest: '/tmp/{{ splunk_rpm }}'
+  when:
+    - nix_uf_state == "present"
+    - push_file == false
+    - splunkrpm.stat['exists'] == False
+
+- name: Copy Splunk UF rpm to host
+  copy:
+    src: '{{ splunk_rpm }}'
+    dest: '/tmp/{{ splunk_rpm }}'
+  when:
+    - nix_uf_state == "present"
+    - push_file == true
+    - splunkrpm.stat['exists'] == False
+
+- name: Install Splunk UF rpm
+  become: yes
+  yum:
+    name: '/tmp/{{ splunk_rpm }}'
+    state: '{{ nix_uf_state}}'
+    disable_gpg_check: yes
+  notify: Install user-seed
+  when:
+    - nix_uf_state == "present"
+    - splunk_installed.stat['exists'] == False
+
+- name: Disable boot start
+  become: yes
+  command:
+    cmd: '{{ splunk_bin_path }}/splunk disable boot-start'
+  when:
+    - nix_uf_state == "absent" or nix_uf_state == "removed"
+    - splunk_installed.stat['exists'] == True
+  notify:
+    - Set package value
+    - Stop splunkd
+    - Uninstall Splunk UF rpm
+    - RM splunk dir
